@@ -62,22 +62,48 @@ elif menu == "📋 Detaylı Rutin & Döngü Analizi":
         c3.metric("Atık", "🟢 Destekliyor" if "ayrı" in waste else "🔴 Gelişmeli")
 
 # ==========================================
-# 3. GÜNLÜK KATKI & TAKİP
+# 3. GÜNLÜK KATKI & TAKİP VE HAFTALIK GRAFİK
 # ==========================================
 elif menu == "📊 Günlük Katkı & Takip":
-    st.subheader("📊 Bugünkü Katkılarınız ve Grafik")
+    st.subheader("📊 Bugünkü Katkılarınız ve Gerçek Zamanlı Takip")
+    st.write("Bugün doğa için hangi adımları attın? Seçimlerini işaretle, haftalık grafiğine anında yansısın!")
+
+    # Oturumda (Session State) haftalık verileri tutmak için başlangıç ayarı
+    import datetime
+    bugun_isim = datetime.datetime.now().strftime("%a") # Haftanın günü (Pzt, Sal vb. simülasyonu için)
+
+    if 'haftalik_veriler' not in st.session_state:
+        st.session_state.haftalik_veriler = {
+            "Pzt": 1.2, "Sal": 2.0, "Çar": 1.5, "Per": 2.8, "Cum": 0.9, "Cmt": 3.1, "Bugün": 0.0
+        }
+
+    st.markdown("### 🌱 Bugün Ne Yaptın?")
+    act1 = st.checkbox("🚴 Ulaşımda toplu taşıma, bisiklet veya yürüme kullandım")
+    act2 = st.checkbox("🍼 Tek kullanımlık plastik şişe yerine matara kullandım")
+    act3 = st.checkbox("♻️ Atıklarımı plastik, kağıt veya cam olarak ayrıştırdım")
+    act4 = st.checkbox("💡 Evde gereksiz yanan lambaları ve cihazları kapattım")
+    act5 = st.checkbox("🥗 Bugün bitki bazlı / yerel beslenmeye özen gösterdim")
+
+    # Seçilen her eylem 0.6 kg CO2 tasarrufu sağlasın
+    yapilan_secim_sayisi = sum([act1, act2, act3, act4, act5])
+    bugunku_puan = yapilan_secim_sayisi * 0.6
     
-    act1 = st.checkbox("🚴 Ulaşımda toplu taşıma / yürüme kullandım")
-    act2 = st.checkbox("🍼 Pet şişe yerine matara kullandım")
-    act3 = st.checkbox("♻️ Atıklarımı geri dönüşüme attım")
+    # Anlık olarak bugünki veriyi güncelleyelim
+    st.session_state.haftalik_veriler["Bugün"] = bugunku_puan
+
+    if yapilan_secim_sayisi > 0:
+        st.success(f"Harika! Bugün toplam **{yapilan_secim_sayisi} eylem** gerçekleştirerek yaklaşık **{bugunku_puan:.1f} kg CO₂** tasarruf sağladın!")
+    else:
+        st.info("💡 Yukarıdan yaptığın eylemleri seçerek bugünkü karbon tasarrufunu grafiğe işleyebilirsin.")
+
+    st.markdown("### 📈 Haftalık Karbon Tasarruf Grafiği (kg CO₂)")
     
-    completed = sum([act1, act2, act3])
-    
-    st.markdown("### 📈 Haftalık Tasarruf Grafiği (kg CO₂)")
+    # Grafiğe verileri aktaralım
     chart_data = pd.DataFrame({
-        "Günler": ["Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Bugün"],
-        "Tasarruf": [1.2, 2.0, 1.5, 2.8, 0.9, 3.1, completed * 0.8]
+        "Günler": list(st.session_state.haftalik_veriler.keys()),
+        "Tasarruf (kg)": list(st.session_state.haftalik_veriler.values())
     })
+    
     st.bar_chart(chart_data.set_index("Günler"))
     
-    st.info("💡 **Öneri:** Matara kullanarak yılda yaklaşık 150 kg plastiğin doğaya karışmasını önleyebilirsiniz!")
+    st.caption("✨ Bu grafik, günlük alışkanlıklarının doğaya olan kümülatif pozitif etkisini canlı olarak gösterir.")
